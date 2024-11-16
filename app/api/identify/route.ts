@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { validateYoutubeUrl } from "@/utils/validateYoutubeUrl";
-import { PrismaClient } from "@prisma/client/extension";
-import { timeStamp } from "console";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
+import { error } from "console";
 
 export async function POST(req: Request){
     try {
         const {url} = await req.json();
+
+        if(!url){
+            return NextResponse.json(
+                {error: 'URL is required'},
+                {status: 400}
+            );
+        }
+
         const videoId = validateYoutubeUrl(url);
 
         if(!videoId){
