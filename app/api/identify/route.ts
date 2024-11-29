@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { validateYoutubeUrl } from "@/utils/validateYoutubeUrl";
 import { prisma } from "@/lib/prisma";
-import { error } from "console";
+import { recognizeMusic, SearchResults } from "@/utils/musicRecognition";
+import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request){
     try {
@@ -24,24 +25,24 @@ export async function POST(req: Request){
         }
 
         //Here we would have to implement music regonition API Integration
-        const mockResult = {
-            songs: [
-                {
-                title: "Sample Song",
-                artist: "Sample Artist",
-                timeStamp: "1:23"
-                }
-            ]
-        }
+        const results = await recognizeMusic(videoId);
+
+        const resultsJson: Prisma.JsonValue = {
+            songs: results.map(song => ({
+                title: song.title,
+                artist: song.artist,
+                timestamp: song.timestamp
+            }))
+        };
 
         const search = await prisma.search.create({
             data: {
                 youtubeUrl: url,
-                results: mockResult
+                results: resultsJson
             }
-        });
+        })
 
-        return NextResponse.json({ success: true, data: mockResult});
+        return NextResponse.json({ success: true, data: { songs: results} });
     } catch(error){
         console.error('Error processing request:', error);
         return NextResponse.json(
