@@ -24,36 +24,29 @@ export async function recognizeMusic(videoId: string): Promise<RecognizedSong[]>
         const results = await new Promise((resolve, reject) => {
             PythonShell.run('scripts/shazam_recognize.py', options)
                 .then(messages => {
+                    console.log('Raw messages from Python:', messages)
                     //Find the last valid JSON message
-                    let result = null;
-                    for(let i = messages.length - 1; i >= 0; i--) {
-                        try {
-                            result = JSON.parse(messages[i]);
-                            if(result && (result.matches || result.error)){
-                                break;
-                            }
-                        } catch (e) {
-                            continue;
+                    const lastMessage = messages[messages.length - 1];
+                    const jsonMatch = lastMessage.match(/\{.*\}/);
+
+                    if(!jsonMatch) {
+                        console.error('No JSON message found in:', messages);
+                        reject(new Error('No JSON message found in recognition results'));
+                        return;
+                    }
+
+                    try {
+                        const result = JSON.parse(jsonMatch[0]);
+                        if(!result || (!result.matches && !result.error)){
+                            console.error('Invalid JSON structure: ', result);
+                            reject(new Error('Invalid JSON structure in recognition results'));
+                            return;
                         }
+                        resolve(result);
+                    } catch (e) {
+                        console.error('Failed to parse JSON:', jsonMatch);
+                        reject(new Error('Failed to parse JSON from recognition results'));
                     }
-
-                    if(!result) {
-                        console.error('No valid JSON found in messages', messages);
-                        reject(new Error('No valid JSON found in recognition results'));
-                        return;
-                    }
-
-                    if(result.error){
-                        reject(new Error(result.error));
-                        return;
-                    }
-
-                    if(!result.matches) {
-                        reject(new Error('No matches found in recognition results'));
-                        return;
-                    }
-
-                    resolve(result);
                 })    
                 .catch(reject);
         });

@@ -25,7 +25,12 @@ async def download_and_recognize(video_id):
             'outtmpl': os.path.join(tempfile.gettempdir(), f'{video_id}.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
-            'logger': None
+            'logger': None,
+            'progress_hooks': [],
+            'noprogess': True,
+            'no_color': True,
+            "consoletitle": False,
+            'verbose': False
         }
 
         #Download audio
@@ -56,7 +61,7 @@ async def download_and_recognize(video_id):
             } for match in out.get("matches", [])]
         }    
 
-        print(json.dumps(out))
+        print(json.dumps(result))
 
     except Exception as e:
         logger.error(f"Error during recognition: {str(e)}")
