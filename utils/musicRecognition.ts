@@ -59,10 +59,26 @@ export async function recognizeMusic(videoId: string): Promise<RecognizedSong[]>
 
 function processShazamResults(results: any): RecognizedSong[] {
 
-    return results.matches.map((match: any) => ({
-        title: match.title,
-        artist: match.artist
-    }))
+    const uniqueSongs = new Set<string>();
+
+    // return results.matches.map((match: any) => ({
+    //     title: match.title,
+    //     artist: match.artist
+    // }))
+
+    return results.matches
+        .filter((match: any) => {
+            const songKey = `${match.title}|${match.artist}`;
+            if(uniqueSongs.has(songKey)) {
+                return false;
+            }
+            uniqueSongs.add(songKey);
+            return true;
+        })
+        .map((match: any) => ({
+            title: match.title,
+            artist: match.artist
+        }));
 }
 
 function formatTimestamp(milliseconds: number): string {
