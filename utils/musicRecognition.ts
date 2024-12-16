@@ -3,7 +3,6 @@ import { PythonShell } from "python-shell";
 export interface RecognizedSong {
     title: string;
     artist: string;
-    timestamp: string;
 }
 
 export type SearchResults = {
@@ -62,8 +61,7 @@ function processShazamResults(results: any): RecognizedSong[] {
 
     return results.matches.map((match: any) => ({
         title: match.title,
-        artist: match.artist,
-        timestamp: formatTimestamp(match.offset)
+        artist: match.artist
     }))
 }
 

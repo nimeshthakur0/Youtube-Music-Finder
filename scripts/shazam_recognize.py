@@ -56,8 +56,7 @@ async def download_and_recognize(video_id):
         result = {
             "matches": [{
                 "title": out.get("track", {}).get("title", "Unknown"),
-                "artist": out.get("track", {}).get("subtitle", "Unknown"),
-                "offset": match.get("offset", 0)
+                "artist": out.get("track", {}).get("subtitle", "Unknown")
             } for match in out.get("matches", [])]
         }    
 
