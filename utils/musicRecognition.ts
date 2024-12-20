@@ -9,16 +9,28 @@ export type SearchResults = {
     songs: RecognizedSong[];
 }
 
-export async function recognizeMusic(videoId: string): Promise<RecognizedSong[]> {
+interface TimeRange {
+    start?: number; // in seconds
+    end?: number;   // in seconds
+}
+
+export async function recognizeMusic(videoId: string, timeRange?: TimeRange): Promise<RecognizedSong[]> {
 
     try {
+        console.log('Recognizing music with time range:', timeRange); // Add this log
 
         const options = {
             mode: 'text' as const,
             pythonPath: 'python3',
             pythonOptions: ['-u'],
-            args: [videoId]
+            args: [
+                videoId,
+                ...(timeRange?.start !== undefined ? [timeRange.start.toString()] : []),
+                ...(timeRange?.end !== undefined ? [timeRange.end.toString()] : [])
+            ]
         };
+
+        console.log('Sending args to Python:', options.args);
 
         const results = await new Promise((resolve, reject) => {
             PythonShell.run('scripts/shazam_recognize.py', options)
@@ -36,9 +48,8 @@ export async function recognizeMusic(videoId: string): Promise<RecognizedSong[]>
 
                     try {
                         const result = JSON.parse(jsonMatch[0]);
-                        if(!result || (!result.matches && !result.error)){
-                            console.error('Invalid JSON structure: ', result);
-                            reject(new Error('Invalid JSON structure in recognition results'));
+                        if (result.error) {
+                            reject(new Error(result.error));
                             return;
                         }
                         resolve(result);
@@ -61,10 +72,9 @@ function processShazamResults(results: any): RecognizedSong[] {
 
     const uniqueSongs = new Set<string>();
 
-    // return results.matches.map((match: any) => ({
-    //     title: match.title,
-    //     artist: match.artist
-    // }))
+    if(!results || !results.matches || !Array.isArray(results.matches)){
+        return [];
+    }
 
     return results.matches
         .filter((match: any) => {

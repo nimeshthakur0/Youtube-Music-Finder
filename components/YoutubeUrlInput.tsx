@@ -2,8 +2,14 @@
 
 import { useState } from "react"
 
+interface TimeRange {
+    start?: number;
+    end?: number;
+}
+
 export function YoutubeUrlInput() {
     const [url, setUrl] = useState('');
+    const [timeRange, setTimeRange] = useState<TimeRange>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<any>(null);
@@ -19,7 +25,13 @@ export function YoutubeUrlInput() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({url})
+                body: JSON.stringify({
+                    url,
+                    timeRange: {
+                        start: timeRange.start,
+                        end: timeRange.end
+                    }
+                })
             });
 
             const data = await response.json();
@@ -36,10 +48,25 @@ export function YoutubeUrlInput() {
         }
     }
 
+    const handleTimeChange = (field: 'start' | 'end', value: string) => {
+        // Convert MM:SS format to seconds
+        if (value) {
+            const [minutes, seconds] = value.split(':').map(Number);
+            const totalSeconds = minutes * 60 + (seconds || 0);
+            setTimeRange(prev => ({ ...prev, [field]: totalSeconds }));
+        } else {
+            setTimeRange(prev => {
+                const newRange = { ...prev };
+                delete newRange[field];
+                return newRange;
+            });
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-lg p-6">
-                <form onSubmit={handleSubmit} className="w-full">
+                <form onSubmit={handleSubmit} className="w-full space-y-4">
                     <div className="flex gap-3">
                         <input 
                             type="text" 
@@ -49,6 +76,31 @@ export function YoutubeUrlInput() {
                             className="flex-1 p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 bg-gray-50"
                             disabled={loading}
                         />
+                    </div>
+
+                    <div className="flex gap-4 items-center">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-600">Start Time (MM:SS):</label>
+                            <input
+                                type="text"
+                                pattern="^[0-9]{1,2}:[0-9]{2}$"
+                                placeholder="00:00"
+                                className="p-2 border border-gray-200 rounded-lg w-24"
+                                onChange={(e) => handleTimeChange('start', e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-gray-600">End Time (MM:SS):</label>
+                            <input
+                                type="text"
+                                pattern="^[0-9]{1,2}:[0-9]{2}$"
+                                placeholder="00:00"
+                                className="p-2 border border-gray-200 rounded-lg w-24"
+                                onChange={(e) => handleTimeChange('end', e.target.value)}
+                                disabled={loading}
+                            />
+                        </div>
                         <button 
                             type="submit"
                             className="px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"

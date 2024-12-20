@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 
 export async function POST(req: Request){
     try {
-        const {url} = await req.json();
+        const {url, timeRange } = await req.json();
 
         if(!url){
             return NextResponse.json(
@@ -25,13 +25,12 @@ export async function POST(req: Request){
         }
 
         //Here we would have to implement music regonition API Integration
-        const results = await recognizeMusic(videoId);
+        const results = await recognizeMusic(videoId, timeRange);
 
         const resultsJson: Prisma.JsonValue = {
             songs: results.map(song => ({
                 title: song.title,
-                artist: song.artist,
-                timestamp: song.timestamp
+                artist: song.artist
             }))
         };
 
